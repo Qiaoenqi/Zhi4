@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <head>
+    <title>公主圣诞节快乐</title>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+    <style type="text/css">
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+      }
+    </style>
+    <script type="text/javascript">
+      var canvas = document.getElementById("canvas");
+      var ctx = canvas.getContext("2d");
+
+      canvas.height = window.innerHeight;
+      canvas.width = window.innerWidth;
+
+      var texts = "I LOVE U".split("");
+
+      var fontSize = 16;
+      var columns = canvas.width / fontSize;
+      var drops = [];
+      for (var x = 0; x < columns; x++) {
+        drops[x] = 1;
+      }
+
+      function draw() {
+        ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = "#f584b7";
+        ctx.font = fontSize + "px arial";
+
+        for (var i = 0; i < drops.length; i++) {
+          var text = texts[Math.floor(Math.random() * texts.length)];
+          ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+          if (drops[i] * fontSize > canvas.height || Math.random() > 0.95) {
+            drops[i] = 0;
+          }
+
+          drops[i]++;
+        }
+      }
+
+      setInterval(draw, 33);
+    </script>
+  </body>
+</html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+  <head>
+    <style>
+      html,
+      body {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background: rgb(0, 0, 0);
+      }
+
+      canvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+
+      #child {
+        position: absolute;
+        left: 50%;
+        top: 48%;
+        transform: translate(-50%, -50%);
+      }
+
+      h4 {
+        font-family: "STKaiti";
+        font-size: 40px;
+        color: #f584b7;
+        position: relative;
+      }
+    </style>
+    <style>
+      html,
+      body {
+        height: 100%;
+        padding: 0;
+        margin: 0;
+        background: #000;
+      }
+
+      canvas {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+
+  <body>
+    <canvas id="pinkboard"></canvas>
+    <script>
+      var settings = {
+        particles: {
+          length: 500,
+          duration: 2,
+          velocity: 100,
+          effect: -0.75,
+          size: 30,
+        },
+      };
+
+      (function () {
+        var b = 0;
+        var c = ["ms", "moz", "webkit", "o"];
+        for (var a = 0; a < c.length && !window.requestAnimationFrame; ++a) {
+          window.requestAnimationFrame = window[c[a] + "RequestAnimationFrame"];
+          window.cancelAnimationFrame =
+            window[c[a] + "CancelAnimationFrame"] ||
+            window[c[a] + "CancelRequestAnimationFrame"];
+        }
+        if (!window.requestAnimationFrame) {
+          window.requestAnimationFrame = function (h, e) {
+            var d = new Date().getTime();
+            var f = Math.max(0, 16 - (d - b));
+            var g = window.setTimeout(function () {
+              h(d + f);
+            }, f);
+            b = d + f;
+            return g;
+          };
+        }
+        if (!window.cancelAnimationFrame) {
+          window.cancelAnimationFrame = function (d) {
+            clearTimeout(d);
+          };
+        }
+      })();
+
+      var Point = (function () {
+        function Point(x, y) {
+          this.x = typeof x !== "undefined" ? x : 0;
+          this.y = typeof y !== "undefined" ? y : 0;
+        }
+        Point.prototype.clone = function () {
+          return new Point(this.x, this.y);
+        };
+        Point.prototype.length = function (length) {
+          if (typeof length == "undefined")
+            return Math.sqrt(this.x * this.x + this.y * this.y);
+          this.normalize();
+          this.x *= length;
+          this.y *= length;
+          return this;
+        };
+        Point.prototype.normalize = function () {
+          var length = this.length();
+          this.x /= length;
+          this.y /= length;
+          return this;
+        };
+        return Point;
+      })();
+
+      var Particle = (function () {
+        function Particle() {
+          this.position = new Point();
+          this.velocity = new Point();
+          this.acceleration = new Point();
+          this.age = 0;
+        }
+        Particle.prototype.initialize = function (x, y, dx, dy) {
+          this.position.x = x;
+          this.position.y = y;
+          this.velocity.x = dx;
+          this.velocity.y = dy;
+          this.acceleration.x = dx * settings.particles.effect;
+          this.acceleration.y = dy * settings.particles.effect;
+          this.age = 0;
+        };
+        Particle.prototype.update = function (deltaTime) {
+          this.position.x += this.velocity.x * deltaTime;
+          this.position.y += this.velocity.y * deltaTime;
+          this.velocity.x += this.acceleration.x * deltaTime;
+          this.velocity.y += this.acceleration.y * deltaTime;
+          this.age += deltaTime;
+        };
+        Particle.prototype.draw = function (context, image) {
+          function ease(t) {
+            return --t * t * t + 1;
+          }
+          var size = image.width * ease(this.age / settings.particles.duration);
+          context.globalAlpha = 1 - this.age / settings.particles.duration;
+          context.drawImage(
+            image,
+            this.position.x - size / 2,
+            this.position.y - size / 2,
+            size,
+            size
+          );
+        };
+        return Particle;
+      })();
+
+      var ParticlePool = (function () {
+        var particles,
+          firstActive = 0,
+          firstFree = 0,
+          duration = settings.particles.duration;
+
+        function ParticlePool(length) {
+          particles = new Array(length);
+          for (var i = 0; i < particles.length; i++)
+            particles[i] = new Particle();
+        }
+        ParticlePool.prototype.add = function (x, y, dx, dy) {
+          particles[firstFree].initialize(x, y, dx, dy);
+
+          firstFree++;
+          if (firstFree == particles.length) firstFree = 0;
+          if (firstActive == firstFree) firstActive++;
+          if (firstActive == particles.length) firstActive = 0;
+        };
+        ParticlePool.prototype.update = function (deltaTime) {
+          var i;
+
+          if (firstActive < firstFree) {
+            for (i = firstActive; i < firstFree; i++)
+              particles[i].update(deltaTime);
+          }
+          if (firstFree < firstActive) {
+            for (i = firstActive; i < particles.length; i++)
+              particles[i].update(deltaTime);
+            for (i = 0; i < firstFree; i++) particles[i].update(deltaTime);
+          }
+
+          while (
+            particles[firstActive].age >= duration &&
+            firstActive != firstFree
+          ) {
+            firstActive++;
+            if (firstActive == particles.length) firstActive = 0;
+          }
+        };
+        ParticlePool.prototype.draw = function (context, image) {
+          if (firstActive < firstFree) {
+            for (i = firstActive; i < firstFree; i++)
+              particles[i].draw(context, image);
+          }
+          if (firstFree < firstActive) {
+            for (i = firstActive; i < particles.length; i++)
+              particles[i].draw(context, image);
+            for (i = 0; i < firstFree; i++) particles[i].draw(context, image);
+          }
+        };
+        return ParticlePool;
+      })();
+
+      (function (canvas) {
+        var context = canvas.getContext("2d"),
+          particles = new ParticlePool(settings.particles.length),
+          particleRate =
+            settings.particles.length / settings.particles.duration,
+          time;
+
+        function pointOnHeart(t) {
+          return new Point(
+            160 * Math.pow(Math.sin(t), 3),
+            130 * Math.cos(t) -
+              50 * Math.cos(2 * t) -
+              20 * Math.cos(3 * t) -
+              10 * Math.cos(4 * t) +
+              25
+          );
+        }
+
+        var image = (function () {
+          var canvas = document.createElement("canvas"),
+            context = canvas.getContext("2d");
+          canvas.width = settings.particles.size;
+          canvas.height = settings.particles.size;
+
+          function to(t) {
+            var point = pointOnHeart(t);
+            point.x =
+              settings.particles.size / 2 +
+              (point.x * settings.particles.size) / 350;
+            point.y =
+              settings.particles.size / 2 -
+              (point.y * settings.particles.size) / 350;
+            return point;
+          }
+
+          context.beginPath();
+          var t = -Math.PI;
+          var point = to(t);
+          context.moveTo(point.x, point.y);
+          while (t < Math.PI) {
+            t += 0.01;
+            point = to(t);
+            context.lineTo(point.x, point.y);
+          }
+          context.closePath();
+
+          context.fillStyle = "#ea80b0";
+          context.fill();
+
+          var image = new Image();
+          image.src = canvas.toDataURL();
+          return image;
+        })();
+
+        function render() {
+          requestAnimationFrame(render);
+
+          var newTime = new Date().getTime() / 1000,
+            deltaTime = newTime - (time || newTime);
+          time = newTime;
+
+          context.clearRect(0, 0, canvas.width, canvas.height);
+
+          var amount = particleRate * deltaTime;
+          for (var i = 0; i < amount; i++) {
+            var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
+            var dir = pos.clone().length(settings.particles.velocity);
+            particles.add(
+              canvas.width / 2 + pos.x,
+              canvas.height / 2 - pos.y,
+              dir.x,
+              -dir.y
+            );
+          }
+
+          particles.update(deltaTime);
+          particles.draw(context, image);
+        }
+
+        function onResize() {
+          canvas.width = canvas.clientWidth;
+          canvas.height = canvas.clientHeight;
+        }
+        window.onresize = onResize;
+
+        setTimeout(function () {
+          onResize();
+          render();
+        }, 10);
+      })(document.getElementById("pinkboard"));
+    </script>
+  </body>
+  <body>
+    <body>
+      <script>
+        (function () {
+          var a_idx = 0;
+          window.onclick = function (event) {
+            var a = new Array("❤G❤", "❤T❤", "❤Q❤");
+
+            var heart = document.createElement("b");
+            heart.onselectstart = new Function("event.returnValue=false");
+
+            document.body.appendChild(heart).innerHTML = a[a_idx];
+            a_idx = (a_idx + 1) % a.length;
+            heart.style.cssText = "position: fixed;left:-100%;";
+
+            var f = 16,
+              x = event.clientX - f / 2,
+              y = event.clientY - f,
+              c = randomColor(),
+              a = 1,
+              s = 1.2;
+
+            var timer = setInterval(function () {
+              if (a <= 0) {
+                document.body.removeChild(heart);
+                clearInterval(timer);
+              } else {
+                heart.style.cssText =
+                  "font-size:16px;cursor: default;position: fixed;color:" +
+                  c +
+                  ";left:" +
+                  x +
+                  "px;top:" +
+                  y +
+                  "px;opacity:" +
+                  a +
+                  ";transform:scale(" +
+                  s +
+                  ");";
+
+                y--;
+                a -= 0.016;
+                s += 0.002;
+              }
+            }, 15);
+          };
+
+          function randomColor() {
+            return (
+              "rgb(" +
+              ~~(Math.random() * 255) +
+              "," +
+              ~~(Math.random() * 255) +
+              "," +
+              ~~(Math.random() * 255) +
+              ")"
+            );
+          }
+        })();
+      </script>
+      <script>
+        window.onload = function () {
+          document.onkeydown = function () {
+            var e = window.event || arguments[0];
+            //F12
+            if (e.keyCode == 123) {
+              return false;
+              //Ctrl+Shift+I
+            } else if (e.ctrlKey && e.shiftKey && e.keyCode == 73) {
+              return false;
+              //Ctrl+Shift+C
+            } else if (e.ctrlKey && e.shiftKey && e.keyCode == 67) {
+              return false;
+              //Shift+F10
+            } else if (e.shiftKey && e.keyCode == 121) {
+              return false;
+              //Ctrl+U
+            } else if (e.ctrlKey && e.keyCode == 85) {
+              return false;
+              //Ctrl+S
+            } else if (e.ctrlKey && e.keyCode == 83) {
+              return false;
+            }
+          };
+          document.oncontextmenu = function () {
+            return false;
+          };
+        };
+
+        document.onselectstart = new Function("event.returnValue=false;");
+
+        document.body.onselectstart = function () {
+          self.event.returnValue = false;
+        };
+      </script>
+      <audio
+        src="https://allall02.baidupcs.com/file/1e2b82f8fj8b1fbc0cec026dd26ea48e?bkt=en-3f603aaf964434022387bd64fe7aceaa1b1f903152e38c9b16fb437c272b75185270b51700efcd20cb826a23939968148933e5dab56d87d039c150985a81809f&fid=1100351343628-250528-662658960018449&time=1701422792&sign=FDTAXUbGERLQlBHSKfWqi-DCb740ccc5511e5e8fedcff06b081203-BszEGHgOYoCcPbUC4%2FfefBwO0uU%3D&to=80&size=3861082&sta_dx=3861082&sta_cs=1&sta_ft=mp3&sta_ct=0&sta_mt=0&fm2=MH%2CYangquan%2CAnywhere%2C%2C%E4%B8%8A%E6%B5%B7%2Cct&ctime=1701411200&mtime=1701411200&resv0=-1&resv1=0&resv2=rlim&resv3=5&resv4=3861082&vuk=1100351343628&iv=0&htype=&randtype=&tkbind_id=0&newver=1&newfm=1&secfm=1&flow_ver=3&pkey=en-298f36b5a77e914703a10e5ba5f4f95258e4bce2ac1f940560d46316f3c74d259a34e252d7eb6eddc43c6d7e43bd053572ac65a1b6ee2b58305a5e1275657320&sl=76480590&expires=8h&rt=pr&r=241844584&vbdid=3740989995&fin=94awa-agz9d.mp3&fn=94awa-agz9d.mp3&rtype=1&dp-logid=8916180066743971824&dp-callid=0.1&hps=1&tsl=80&csl=80&fsl=-1&csign=bFWaWDWF621TUgCcmHb4Rs2uBno%3D&so=0&ut=6&uter=4&serv=0&uc=1868481949&ti=05df9239daa4064784a511455c7594bef70cef077fa5f8a9&hflag=30&from_type=1&adg=c_ce00b36bb97b8b9358b3d82a65ac007e&reqlabel=250528_f_1609da80d94984cd9363d9abe8d000bf_-1_1f63f353d9bada1704c51e934a102ea5&by=themis"
+        autoplay
+        loop
+      ></audio>
+    </body>
+  </body>
+</html>
